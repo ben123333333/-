@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>מתכנן זמן אישי</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#64b5f6">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&display=swap');
+
+    body {
+      font-family: 'Heebo', sans-serif;
+      background: linear-gradient(to right, #a1c4fd, #c2e9fb);
+      padding: 2rem;
+      direction: rtl;
+      min-height: 100vh;
+    }
+    h1 {
+      color: #003366;
+      font-size: 2.5rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    .task-list {
+      margin-top: 1rem;
+    }
+    .task {
+      background: white;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.3s ease-in-out;
+    }
+    .task.done {
+      background-color: #e8f5e9;
+      text-decoration: line-through;
+    }
+    input[type="text"] {
+      padding: 0.6rem 1rem;
+      font-size: 1.1rem;
+      margin: 0.25rem;
+      border-radius: 12px;
+      border: 1px solid #ccc;
+      width: 250px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    input[type="time"] {
+      padding: 0.6rem;
+      font-size: 1.2rem;
+      margin: 0.25rem;
+      border-radius: 12px;
+      border: 2px solid #90caf9;
+      background-color: #ffffff;
+      color: #1565c0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    button {
+      cursor: pointer;
+      transition: all 0.2s ease;
+      padding: 0.6rem 1.2rem;
+      font-size: 1rem;
+      border-radius: 12px;
+      border: none;
+      background-color: #64b5f6;
+      color: white;
+    }
+    button:hover {
+      background-color: #42a5f5;
+    }
+    .done-button {
+      background-color: #f0f0f0;
+      color: #444;
+      border: none;
+      font-size: 1.4rem;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+    .done-button.done {
+      background-color: #4caf50;
+      color: white;
+      transform: scale(1.3) rotate(20deg);
+      box-shadow: 0 0 10px rgba(76, 175, 80, 0.6);
+    }
+  </style>
+</head>
+<body>
+  <h1>מתכנן זמן אישי</h1>
+  <div style="text-align: center;">
+    <input type="text" id="taskInput" placeholder="מה אתה צריך לעשות?">
+    <input type="time" id="timeInput">
+    <button onclick="addTask()">הוסף משימה</button>
+  </div>
+
+  <div class="task-list" id="taskList"></div>
+
+  <audio id="beep-sound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" preload="auto"></audio>
+
+  <script>
+    const tasks = [];
+
+    function addTask() {
+      const taskText = document.getElementById('taskInput').value;
+      const taskTime = document.getElementById('timeInput').value;
+      if (!taskText || !taskTime) return;
+
+      const taskList = document.getElementById('taskList');
+      const task = document.createElement('div');
+      task.className = 'task';
+      task.innerHTML = `
+        <span><strong>${taskText}</strong> ב-${taskTime}</span>
+        <button class="done-button" onclick="markDone(this)">✔</button>
+      `;
+      taskList.appendChild(task);
+
+      tasks.push({ time: taskTime, notified: false });
+
+      document.getElementById('taskInput').value = '';
+      document.getElementById('timeInput').value = '';
+    }
+
+    function markDone(button) {
+      const task = button.parentElement;
+      task.classList.add('done');
+      button.classList.add('done');
+      button.disabled = true;
+    }
+
+    function checkTimes() {
+      const now = new Date();
+      const currentTime = now.toTimeString().slice(0,5);
+      const audio = document.getElementById('beep-sound');
+      document.querySelectorAll('.task').forEach((el, index) => {
+        const text = el.innerText;
+        if (text.includes(currentTime) && !tasks[index].notified) {
+          audio.play();
+          tasks[index].notified = true;
+        }
+      });
+    }
+
+    setInterval(checkTimes, 10000);
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js')
+          .then(reg => console.log('Service worker registered.'))
+          .catch(err => console.error('Service worker error:', err));
+      });
+    }
+  </script>
+</body>
+</html>
